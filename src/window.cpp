@@ -1,7 +1,7 @@
 /*
     src/window.cpp -- Top-level window widget
 
-    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    NanoGUI was developed by Wenzel Jakob <wenzel.jakob@epfl.ch>.
     The widget drawing code is based on the NanoVG demo application
     by Mikko Mononen.
 
@@ -105,9 +105,12 @@ void Window::draw(NVGcontext *ctx) {
         nvgBeginPath(ctx);
         nvgRoundedRect(ctx, mPos.x(), mPos.y(), mSize.x(), hh, cr);
         nvgStrokeColor(ctx, mTheme->mWindowHeaderSepTop);
-        nvgScissor(ctx, mPos.x(), mPos.y(), mSize.x(), 0.5f);
+
+        nvgSave(ctx);
+        nvgIntersectScissor(ctx, mPos.x(), mPos.y(), mSize.x(), 0.5f);
         nvgStroke(ctx);
         nvgResetScissor(ctx);
+        nvgRestore(ctx);
 
         nvgBeginPath(ctx);
         nvgMoveTo(ctx, mPos.x() + 0.5f, mPos.y() + hh - 1.5f);

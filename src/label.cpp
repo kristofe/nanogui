@@ -1,7 +1,7 @@
 /*
     src/label.cpp -- Text label with an arbitrary font, color, and size
 
-    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    NanoGUI was developed by Wenzel Jakob <wenzel.jakob@epfl.ch>.
     The widget drawing code is based on the NanoVG demo application
     by Mikko Mononen.
 
@@ -18,8 +18,19 @@ NAMESPACE_BEGIN(nanogui)
 
 Label::Label(Widget *parent, const std::string &caption, const std::string &font, int fontSize)
     : Widget(parent), mCaption(caption), mFont(font) {
-    mFontSize = fontSize < 0 ? mTheme->mStandardFontSize : fontSize;
-    mColor = mTheme->mTextColor;
+    if (mTheme) {
+        mFontSize = mTheme->mStandardFontSize;
+        mColor = mTheme->mTextColor;
+    }
+    if (fontSize >= 0) mFontSize = fontSize;
+}
+
+void Label::setTheme(Theme *theme) {
+    Widget::setTheme(theme);
+    if (mTheme) {
+        mFontSize = mTheme->mStandardFontSize;
+        mColor = mTheme->mTextColor;
+    }
 }
 
 Vector2i Label::preferredSize(NVGcontext *ctx) const {

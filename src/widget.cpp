@@ -1,7 +1,7 @@
 /*
     src/widget.cpp -- Base class of all widgets
 
-    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    NanoGUI was developed by Wenzel Jakob <wenzel.jakob@epfl.ch>.
     The widget drawing code is based on the NanoVG demo application
     by Mikko Mononen.
 
@@ -25,10 +25,8 @@ Widget::Widget(Widget *parent)
       mFixedSize(Vector2i::Zero()), mVisible(true), mEnabled(true),
       mFocused(false), mMouseFocus(false), mTooltip(""), mFontSize(-1.0f),
       mCursor(Cursor::Arrow) {
-    if (parent) {
+    if (parent)
         parent->addChild(this);
-        mTheme = parent->mTheme;
-    }
 }
 
 Widget::~Widget() {
@@ -38,8 +36,16 @@ Widget::~Widget() {
     }
 }
 
+void Widget::setTheme(Theme *theme) {
+    if (mTheme.get() == theme)
+        return;
+    mTheme = theme;
+    for (auto child : mChildren)
+        child->setTheme(theme);
+}
+
 int Widget::fontSize() const {
-    return mFontSize < 0 ? mTheme->mStandardFontSize : mFontSize;
+    return (mFontSize < 0 && mTheme) ? mTheme->mStandardFontSize : mFontSize;
 }
 
 Vector2i Widget::preferredSize(NVGcontext *ctx) const {
@@ -133,10 +139,16 @@ bool Widget::keyboardCharacterEvent(unsigned int) {
     return false;
 }
 
-void Widget::addChild(Widget *widget) {
-    mChildren.push_back(widget);
+void Widget::addChild(int index, Widget * widget) {
+    assert(index <= childCount());
+    mChildren.insert(mChildren.begin() + index, widget);
     widget->incRef();
     widget->setParent(this);
+    widget->setTheme(mTheme);
+}
+
+void Widget::addChild(Widget * widget) {
+    addChild(childCount(), widget);
 }
 
 void Widget::removeChild(const Widget *widget) {
@@ -148,6 +160,13 @@ void Widget::removeChild(int index) {
     Widget *widget = mChildren[index];
     mChildren.erase(mChildren.begin() + index);
     widget->decRef();
+}
+
+int Widget::childIndex(Widget *widget) const {
+    auto it = std::find(mChildren.begin(), mChildren.end(), widget);
+    if (it == mChildren.end())
+        return -1;
+    return it - mChildren.begin();
 }
 
 Window *Widget::window() {
@@ -210,9 +229,7 @@ bool Widget::load(Serializer &s) {
     if (!s.get("focused", mFocused)) return false;
     if (!s.get("tooltip", mTooltip)) return false;
     if (!s.get("fontSize", mFontSize)) return false;
-    int cursor;
-    if (!s.get("cursor", cursor)) return false;
-    mCursor = (Cursor) cursor;
+    if (!s.get("cursor", mCursor)) return false;
     return true;
 }
 
